@@ -1,0 +1,463 @@
+<%@page import="java.util.Calendar"%>
+<%@page import="java.text.SimpleDateFormat"%>
+<%@page import="java.sql.ResultSet"%>
+<%@page import="java.sql.PreparedStatement"%>
+<%@page import="com.facilitytracker.connectionUtil.Connection_Util"%>
+<%@page import="java.sql.Connection"%>
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
+    pageEncoding="ISO-8859-1"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>Master Generate</title> 
+  <!-- Bootstrap CSS -->
+  <link href="css/bootstrap.min.css" rel="stylesheet">
+  <!-- bootstrap theme -->
+  <link href="css/bootstrap-theme.css" rel="stylesheet">
+  <!--external css-->
+  <!-- font icon -->
+  <link href="css/elegant-icons-style.css" rel="stylesheet" />
+  <link href="css/font-awesome.min.css" rel="stylesheet" />
+  <!-- full calendar css-->
+  <link href="assets/fullcalendar/fullcalendar/bootstrap-fullcalendar.css" rel="stylesheet" />
+  <link href="assets/fullcalendar/fullcalendar/fullcalendar.css" rel="stylesheet" />
+  <!-- easy pie chart-->
+  <link href="assets/jquery-easy-pie-chart/jquery.easy-pie-chart.css" rel="stylesheet" type="text/css" media="screen" />
+  <!-- owl carousel -->
+  <link rel="stylesheet" href="css/owl.carousel.css" type="text/css">
+  <link href="css/jquery-jvectormap-1.2.2.css" rel="stylesheet">
+  <!-- Custom styles -->
+  <link rel="stylesheet" href="css/fullcalendar.css">
+  <link href="css/widgets.css" rel="stylesheet">
+  <link href="css/style.css" rel="stylesheet">
+  <link href="css/style-responsive.css" rel="stylesheet" />
+  <link href="css/xcharts.min.css" rel=" stylesheet">
+  <link href="css/jquery-ui-1.10.4.min.css" rel="stylesheet"> 
+  <script type="text/javascript"> 
+	function checkQuote() {
+		if(event.keyCode == 39 || event.keyCode == 34 || event.keyCode == 47  || event.keyCode == 63) {
+			event.keyCode = 0;
+			return false;
+		}
+	}
+  
+/*   function decision_call(val) {
+	  var retVal = confirm("Are you sure to delete...?"); 
+      if( retVal == true ) {
+      alert("You Pressed OK!");
+    	var xmlhttp;
+			if (window.XMLHttpRequest) {
+				// code for IE7+, Firefox, Chrome, Opera, Safari
+				xmlhttp = new XMLHttpRequest();  
+			} else {
+				// code for IE6, IE5
+				xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");   
+			}
+			xmlhttp.onreadystatechange = function() {
+				if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+					document.getElementById("delete_record"+val).innerHTML = xmlhttp.responseText; 
+				}
+			};  
+			xmlhttp.open("POST", "Master_DeleteReq.jsp?id=" + val, true);  
+			xmlhttp.send();    
+	      } else {
+	    	  alert("You Pressed Cancel!");
+	    	  return false;
+	      }
+	}; */
+	 
+	function sendMessage(code,val,qty) {
+		 var msg = document.getElementById('msg'+val); 
+		 var sendMsg = document.getElementById('sendMsg'+val);  
+		 var approve = document.getElementById('approve'+val);
+		 var reject = document.getElementById('reject'+val);  
+		 var matName = document.getElementById('matName'+val);  
+		 var input = document.getElementsByName(val+'array[]');
+		 
+		 var cndCheck='';
+		 var queryString = "";
+		 if(sendMsg.value!="" && (code==1 || code==4)){
+			 cndCheck='1';
+		 }else if(code!=1 && code!=4){
+			 cndCheck='1';
+		 }else{
+			 alert("No message received...!!!!");
+		 }
+		 
+		 if(code==2){ 
+			if(matName.value!=''){
+				queryString += "&matName=" +  matName.value;
+		 for (var i = 0; i < input.length; i++) {
+			 var a = input[i]; 
+             if(a.value==""){
+            	 cndCheck=''; 
+             }else if(a.value.length==10){
+            	 	if(i==0){
+            		 	queryString += "&myArray=" +  a.value;  
+     				}else{
+            	 		queryString += "&myArray=" +  a.value;  
+     				}
+             	  }
+         		}
+			}else{
+				cndCheck='';
+				alert("Material Code Missing...");
+			}
+		 }
+		if(cndCheck!=''){  
+		document.getElementById("hidMe"+val).style.visibility = "hidden";
+		document.getElementById('matName'+val).style.visibility = "hidden";
+		
+		 sendMsg.readOnly = true;
+		 msg.style.display = "none";
+		 approve.style.display = "none";   
+		 reject.style.display = "none";
+		 var xmlhttp;
+			if (window.XMLHttpRequest) {
+				// code for IE7+, Firefox, Chrome, Opera, Safari
+				xmlhttp = new XMLHttpRequest();  
+			} else {
+				// code for IE6, IE5
+				xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");   
+			}
+			xmlhttp.onreadystatechange = function() {
+				if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+					document.getElementById("sendMsgBack"+val).innerHTML = xmlhttp.responseText; 
+				}
+			};
+		 	xmlhttp.open("POST", "Master_MSGSend.jsp?id=" + val + "&sendMsg=" + sendMsg.value + "&select=" + code + "&qty=" + qty  + queryString, true);  
+			xmlhttp.send(); 
+			document.getElementById('matName'+val).style.visibility = "hidden";
+		}else {
+			alert("Incomplete Data..., Error Occurred...!!!!");
+		}
+	}
+</script>
+<style type="text/css">
+table.gridtable {
+	font-family: verdana, arial, sans-serif; 
+	color: #333333;
+	border-width: 1px;
+	border-color: #666666;
+	border-collapse: collapse;
+}
+
+table.gridtable th {
+	font-size: 12px;
+	border-width: 1px;
+	padding: 8px;
+	border-style: solid;
+	border-color: #666666;
+	text-align: center;
+	/* background-color: #dedede; */
+}
+
+table.gridtable td {
+font-size: 10px;
+	border-width: 1px;
+	padding: 2px;
+	border-style: solid;
+	border-color: #666666;
+	background-color: #ffffff;
+}
+</style>
+</head>
+
+<body style="color: black;">
+<%
+try{
+	int newCount=0, openCount=0, reOpenCount=0, closedCount=0;
+	Connection con = Connection_Util.getLocalUserConnection();
+	Connection con_master = Connection_Util.getConnectionMaster();
+	int comp_id = Integer.valueOf(session.getAttribute("comp_id").toString()); 
+	int uid = Integer.valueOf(session.getAttribute("uid").toString());
+	boolean availFlag=false ;
+	int dept_id = Integer.valueOf(session.getAttribute("dept_id").toString());
+	PreparedStatement ps_check = null, ps_check1=null,ps_local=null;
+	ResultSet rs_check = null,rs_check1=null,rs_local=null; 
+	SimpleDateFormat format2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	java.util.Date date2cmp;
+	Calendar calobj = Calendar.getInstance();
+	String todays_date = format2.format(calobj.getTime());
+	date2cmp = format2.parse(todays_date);
+/*-------------------------------------------------------------------------------------------------------------------*/ 
+%> 
+<!-- container section start -->
+<section id="container" class="">
+<!---------------------------------------------------------------  Include Header ---------------------------------------------------------------------------------------->
+<%@include file="Header.jsp" %>
+<!---------------------------------------------------------------  Include Sidebar ---------------------------------------------------------------------------------------->
+<%@include file="Sidebar.jsp" %>
+<!----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------->	
+<!--main content start-->
+    <section id="main-content">
+      <section class="wrapper">
+      <form action="Generate_MatExcel" method="post" name="approve" id="approve" onsubmit="submit.disabled = true; return true;">
+        <!--overview start-->
+        <div class="row">
+          <div class="col-lg-12">
+            <!-- <h3 class="page-header"><i class="fa fa-laptop"></i> Dashboard</h3> -->
+            <ol class="breadcrumb">
+              <li><i class="icon_ribbon_alt"></i>Master Generate</li>
+              <!-- <li><i class="icon_box-checked" style="color: gray;"></i><a href="Master_Approval.jsp" style="font-weight: bold;">All Approvals</a>  </li> -->
+              <li><a href="Master_Generate.jsp" style="font-weight: bold;"><i class="icon_refresh" style="color: gray;"></i>Refresh</a>  </li>
+              <li>        
+    <%
+  		if(request.getParameter("filepath")!=null){
+	%>
+		<a href="DownloadFile.jsp?filepath=<%=request.getParameter("filepath") %>" class="button"><b style="font-size: 12px;background-color: yellow;">Download File</b></a> 
+	<%
+		}else{
+	%>
+		<input type="submit" name="submit" id="submit" value="Generate Excel" class=" btn-primary" style="font-weight: bold;height: 25px;text-align: center !important;"/> 
+	<%
+		}
+	%>
+         </li>
+        <%
+  		if(request.getParameter("success")!=null){
+		%> 
+         <strong class="alert alert-success fade in"><%=request.getParameter("success") %> </strong> 
+        <%
+		}if(request.getParameter("statusNop")!=null){
+		%> 
+	         <strong class="alert alert-block alert-danger fade in"><%=request.getParameter("statusNop") %> </strong> 
+	    <%
+		}
+		%>
+            </ol>
+          </div>
+        </div> 
+<!-- ********************************************************************************************************************* -->
+<div class="row" style="height:500px;">
+          <div class="col-lg-12"> 
+             <div class="table-responsive"> 
+				<table style="width: 100%;" class="gridtable"> 
+					<tr style="background-color: #dedede;color: black;text-align: center;"> 
+						<th><i class="icon_box-checked" style="color: gray;"></i></th>
+						<th>NO</th>
+						<th>Plant</th>
+						<th>Mat Type</th>
+						<th>Material Group</th>
+						<th>Material Name</th>
+						<th>Qty</th>
+						<th>Location</th>
+						<th>UOM</th> 
+						<th>Required In</th>
+						<th>Amount</th>						
+						<th>HSN NO</th>
+						<th>Reason</th> 
+						<th>Call</th>
+						<th>Overdue (Hrs)</th>
+						<th>Status</th>
+						<th>Material Code</th> 
+						<th>Account Code</th> 
+						<th>Msg</th>
+						<th>Action</th> 
+						<th>Log</th>
+					</tr>
+	<%
+	String mat_group="", logBy=""; 
+	long diff=0;
+	String query = "";
+	ps_check = con_master.prepareStatement("SELECT *  FROM rel_SAPmaster_releaseStrategy where enable=1 and user_type='mst' and u_id="+uid);
+ 	rs_check = ps_check.executeQuery();
+ 	if(rs_check.next()){
+	query = "SELECT * FROM tran_SAPmaster_create where enable=1 and stage_no=2  order by materialType desc";
+ 	}
+
+ 	if(dept_id==18){
+ 		query = "SELECT * FROM tran_SAPmaster_create where enable=1 and stage_no=2  order by materialType desc";
+ 	}
+	
+	
+		ps_check = con_master.prepareStatement(query); 
+		rs_check = ps_check.executeQuery();
+     	while(rs_check.next()){ 
+			ps_check1 = con_master.prepareStatement("SELECT descr  FROM master_data where tablekey='matGroup' and plant='' and enable=1 and code="+rs_check.getString("materialGroup"));
+			rs_check1 = ps_check1.executeQuery();
+			while (rs_check1.next()) {
+				mat_group=rs_check1.getString("descr");
+			}
+			ps_local = con.prepareStatement("SELECT u_name FROM user_tbl where u_id="+rs_check.getInt("created_by"));
+			rs_local = ps_local.executeQuery();
+			while(rs_local.next()){
+				logBy = rs_local.getString("u_name");
+			}
+	%>
+	<tr style="cursor:default; font-size: 12px;">
+		<td align="center"><input type="checkbox" name="cheked_id" id="cheked_id<%= rs_check.getInt("id")%>" value="<%= rs_check.getInt("id")%>"/></td>
+		<td align="right"><%=rs_check.getInt("id") %>
+		<%
+		if(rs_check.getInt("fileupload_id")!=0){
+		%>
+		<strong style="color: blue;">*</strong>
+		<%	
+		}
+		%>
+		</td>
+		<td><%=rs_check.getString("plant") %></td>
+		<td><%=rs_check.getString("materialType") %></td>
+		<td><%=mat_group %></td>
+		<td><%=rs_check.getString("materialName") %></td>
+		<td align="right"><%=rs_check.getInt("qty") %></td>
+		<td><%=rs_check.getString("storageLocation") %></td>
+		<td><%=rs_check.getString("uom") %></td> 
+		<td width="7%"><%=rs_check.getString("plant_toExtend") %></td>
+		<td align="right"><%=rs_check.getString("price") %></td>		
+		<td align="right"><%=rs_check.getString("hsn_code") %></td>
+		<td><%=rs_check.getString("reason") %></td>
+		<td align="right"><b><%=logBy %></b><br><%=rs_check.getString("contactNo") %></td>
+		<% 
+		ps_local = con_master.prepareStatement("select top 1 created_date,newMaster_id from rel_SAPmaster_release where newMaster_id="+rs_check.getInt("id")+" and status='REL' and enable=1");
+     	rs_local = ps_local.executeQuery();
+     	if(rs_local.next()){  
+     		diff = Math.abs(date2cmp.getTime() - format2.parse(rs_local.getString("created_date")).getTime())  / (60 * 60 * 1000);   
+     	}
+		
+		%> 
+		<td align="center"><%=diff %></td>
+		
+		<td align="center"><a href="Master_Edit.jsp?id=<%=rs_check.getInt("id")%>&appr=2" style="font-weight: bold;color: blue;" title="Click to edit/Make corrections if any"><%=rs_check.getString("status_id") %></a></td> 
+		<td>
+		<textarea rows="1" cols="10" name="matName<%=rs_check.getInt("id") %>" id="matName<%=rs_check.getInt("id") %>" maxlength="18" class="form-control" onkeypress="return checkQuote();" style="font-size: 9px;font-weight: bold;color: black;"></textarea>
+		</td>
+		<td>
+		<span id="hidMe<%=rs_check.getInt("id") %>">
+		<%
+		if(rs_check.getString("materialType").equalsIgnoreCase("ZAST")){
+			for(int i=0;i<rs_check.getInt("qty");i++){
+		%>
+		<input type="text" name="<%=rs_check.getInt("id") %>array[]" id="<%=rs_check.getInt("id") %>array[]" class="form-control" maxlength="10" minlength="10" style="color: black;">
+		<%
+			}
+		}
+		%>
+		</span>
+		</td>
+		<td align="center">
+		<span id="sendMsgBack<%=rs_check.getInt("id") %>">
+		<textarea rows="1" cols="10" name="sendMsg<%=rs_check.getInt("id") %>" class="form-control" onkeypress="return checkQuote();" id="sendMsg<%=rs_check.getInt("id") %>" style="font-size: 9px;font-weight: bold;color: black;"></textarea>
+		 </span>
+		</td>
+		<td align="center" width="100">
+		<img src="img/check.png" title="Done" style="cursor: pointer;" onclick="sendMessage('2',<%=rs_check.getInt("id") %>,<%=rs_check.getInt("qty") %>); return false;" id="approve<%=rs_check.getInt("id") %>">&nbsp;
+		<img src="img/close.png" title="Reject" style="cursor: pointer;" onclick="sendMessage('4',<%=rs_check.getInt("id") %>,<%=rs_check.getInt("qty") %>); return false;" id="reject<%=rs_check.getInt("id") %>">
+		
+		<img src="img/send.png" title="Send Message" style="cursor: pointer;"  onclick="sendMessage('1',<%=rs_check.getInt("id") %>,<%=rs_check.getInt("qty") %>); return false;" id="msg<%=rs_check.getInt("id") %>">
+		
+		</td>
+		<td>
+		<a href="Master_Approval_Log.jsp?id=<%=rs_check.getInt("id")%>&home=4">
+		<img src="img/LogHere.png" title="History" style="cursor: pointer;" id="log<%=rs_check.getInt("id") %>">
+		</a>
+		</td>
+	</tr>
+	<%
+		}
+	%>
+	</table>
+        </div>
+          </div>
+        </div>
+        </form>
+      </section> 
+     </section> 
+   
+ <!---------------------------------------------------------------------------------- User Profile Screen Ends ----------------------------------------------------------------------->                
+ 	<%
+	}catch(Exception e){
+		e.printStackTrace();
+	}
+    %>  
+  </section> 
+ 
+  <script src="js/jquery.js"></script>
+  <script src="js/jquery-ui-1.10.4.min.js"></script>
+  <script src="js/jquery-1.8.3.min.js"></script>
+  <script type="text/javascript" src="js/jquery-ui-1.9.2.custom.min.js"></script>
+  <!-- bootstrap -->
+  <script src="js/bootstrap.min.js"></script>
+  <!-- nice scroll -->
+  <script src="js/jquery.scrollTo.min.js"></script>
+  <script src="js/jquery.nicescroll.js" type="text/javascript"></script>
+  <!-- charts scripts -->
+  <script src="assets/jquery-knob/js/jquery.knob.js"></script>
+  <script src="js/jquery.sparkline.js" type="text/javascript"></script>
+  <script src="assets/jquery-easy-pie-chart/jquery.easy-pie-chart.js"></script>
+  <script src="js/owl.carousel.js"></script>
+  <!-- jQuery full calendar -->
+  <script src="js/fullcalendar.min.js"></script>
+    <!-- Full Google Calendar - Calendar -->
+    <script src="assets/fullcalendar/fullcalendar/fullcalendar.js"></script>
+    <!--script for this page only-->
+    <script src="js/calendar-custom.js"></script>
+    <script src="js/jquery.rateit.min.js"></script>
+    <!-- custom select -->
+    <script src="js/jquery.customSelect.min.js"></script>
+    <script src="assets/chart-master/Chart.js"></script>
+
+    <!--custome script for all page-->
+    <script src="js/scripts.js"></script>
+    <!-- custom script for this page-->
+    <script src="js/sparkline-chart.js"></script>
+    <script src="js/easy-pie-chart.js"></script>
+    <script src="js/jquery-jvectormap-1.2.2.min.js"></script>
+    <script src="js/jquery-jvectormap-world-mill-en.js"></script>
+    <script src="js/xcharts.min.js"></script>
+    <script src="js/jquery.autosize.min.js"></script>
+    <script src="js/jquery.placeholder.min.js"></script>
+    <script src="js/gdp-data.js"></script>
+    <script src="js/morris.min.js"></script>
+    <script src="js/sparklines.js"></script>
+    <script src="js/charts.js"></script>
+    <script src="js/jquery.slimscroll.min.js"></script>
+    <script>
+      //knob
+      $(function() {
+        $(".knob").knob({
+          'draw': function() {
+            $(this.i).val(this.cv + '%')
+          }
+        })
+      });
+
+      //carousel
+      $(document).ready(function() {
+        $("#owl-slider").owlCarousel({
+          navigation: true,
+          slideSpeed: 300,
+          paginationSpeed: 400,
+          singleItem: true
+
+        });
+      });
+
+      //custom select box
+
+      $(function() {
+        $('select.styled').customSelect();
+      });
+
+      /* ---------- Map ---------- */
+      $(function() {
+        $('#map').vectorMap({
+          map: 'world_mill_en',
+          series: {
+            regions: [{
+              values: gdpData,
+              scale: ['#000', '#000'],
+              normalizeFunction: 'polynomial'
+            }]
+          },
+          backgroundColor: '#eef3f7',
+          onLabelShow: function(e, el, code) {
+            el.html(el.html() + ' (GDP - ' + gdpData[code] + ')');
+          }
+        });
+      });
+    </script>
+
+</body>
+</html>
